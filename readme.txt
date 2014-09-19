@@ -1,0 +1,67 @@
+=== MZ Mindbody API ===
+Contributors: mikeill, rtzee
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A95ZEELLHGECE
+Tags: mindbody, schedule, calendar, yoga, soap, pear
+Requires at least: 3.0.1
+Tested up to: 4.0
+Stable tag: 1.0
+License: GPLv2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+
+MZ Mindbody API uses the Devin Crossman API to interface with MindBodyOnline and display Staff, Schedule and Workshops.
+
+
+== Description ==
+
+MZ Mindbody API uses the Devin Crossman API to interface with MindBodyOnline and display Staff, Schedule and Workshops.
+
+Two important requirements are:
+
+    1. PEAR and SOAP must be installed/enabled on the web server
+    2. MindBodyOnline API Developer Account
+
+== Installation ==
+
+Steps to install and configure MZ Mindbody API:
+
+1. Upload the directory, `mz_mindbody_api` to the `/wp-content/plugins/` directory
+2. Activate the plugin through the 'Plugins' menu in WordPress
+3. Follow instructions at [mZoo.org](http://www.mzoo.org/creating-your-mindbody-credentials)
+4. In the WP Admin panel go to: Settings -> MZ Mindbody and configure settings
+5. It will probably be necessary to add .css either in child theme or elsewhere:
+
+    `.modal-sm {
+    background-color: #fff;
+    }`
+
+== Frequently Asked Questions ==
+
+= Seriously, have you ever made a plugin before? =
+
+This is the first released one, so please be gentle.
+
+== Screenshots ==
+
+1. Calendar Display
+2. Details Modal
+3. Teacher Bio Page
+4. Admin Page
+
+== Changelog ==
+
+= 1.0 =
+Initial release.
+
+== Upgrade Notice ==
+
+= 1.0 =
+N/A
+
+== Notes ==
+
+This is not a terribly easy plugin to install. 
+Configuring the server may require input from your web hosting company (or you might get lucky).
+And getting all the MindBody details configured can also be a little laborious.
+Also mindbody is charging developers $5 per month per account connection now.
+
+
