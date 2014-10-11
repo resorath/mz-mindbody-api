@@ -29,7 +29,7 @@ protected $userCredentials = array(
 	public $soapOptions = array('soap_version'=>SOAP_1_1, 'trace'=>true);
 	public $debugSoapErrors = true;
 	
-	/*
+/*
 	** initializes the apiServices and apiMethods arrays
 	*/
 	public function __construct($sourceCredentials = array()) {
@@ -45,17 +45,12 @@ protected $userCredentials = array(
 			'StaffService' => $this->staffServiceWSDL
 		);
 		// set apiMethods array with available methods from Mindbody services
-		foreach($this->apiServices as $serviceName => $serviceWSDL) {
-			$this->client = new SoapClient($serviceWSDL, $this->soapOptions);
-			$this->apiMethods = array_merge($this->apiMethods, array($serviceName=>array_map(
-				function($n){
-					$start = 1+strpos($n, ' ');
-					$end = strpos($n, '(');
-					$length = $end - $start;
-					return substr($n, $start, $length);
-				}, $this->client->__getFunctions()
-			)));	
-		}
+		if (phpversion() >= 5.3) {
+            include_once('php_variants/construct_newer.php');
+        }else{
+            include_once('php_variants/construct_older.php');
+        }
+		
 		// set sourceCredentials
 		if(!empty($sourceCredentials)) {
 			if(!empty($sourceCredentials['SourceName'])) {
@@ -166,7 +161,17 @@ protected $userCredentials = array(
 		}
 		return $array;
 	}
-
+	
+  	/*
+	** Used by versions of php < 5.3
+	*/
+    private function extract_client($n){
+					$start = 1+strpos($n, ' ');
+					$end = strpos($n, '(');
+					$length = $end - $start;
+					return substr($n, $start, $length);
+				    }
+				
   	/*
 	** overrides SelectDataXml method to remove some invalid XML element names
 	**
