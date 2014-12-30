@@ -2,7 +2,7 @@
 /**
 Plugin Name: mZoo Mindbody Interface - Schedule, Events, Staff Display
 Description: Interface Wordpress with MindbodyOnline data with Bootstrap Responsive Layout
-Version: 1.0
+Version: 1.3
 Author: mZoo.org
 Author URI: http://www.mZoo.org/
 Plugin URI: http://www.mzoo.org/mz-mindbody-wp
@@ -178,8 +178,8 @@ if ( is_admin() )
 		<p><?php _e('If you do not have them yet, visit the') ?> <a href="https://api.mindbodyonline.com/Home/LogIn"><?php _e('MindBodyOnline developers website') ?></a> <?php _e('and register for developer credentials.')?></p>
 		<p><?php _e('Add to page or post with shortcode')?>: [mz-mindbody-show-schedule], [mz-mindbody-show-events], [mz-mindbody-staff-list]</p>
 	<?php
-	/* TODO:
-	[mz-mindbody-show-schedule (type=day)], [mz-mindbody-login], [mz-mindbody-logout], [mz-mindbody-signup]
+	/*
+	TODO:[mz-mindbody-show-schedule (type=day)],
 	*/
 	}
 
@@ -301,37 +301,41 @@ if (phpversion() >= 5.3) {
     include_once('php_variants/sort_older.php');
     }
 
-function getStartAndEndDate($week, $year) {
-  // Adding leading zeros for weeks 1 - 9.
-  $date_string = $year . 'W' . sprintf('%02d', $week);
-  $return = array();
-  $return[0] = date('Y-m-d', strtotime($date_string));//not date('Y-n-j
-  $return[1] = date('Y-m-d', strtotime($date_string . '7'));
-  return $return;
+function mz_getNavDates($date) {
+    /*Gets a YYYY-mm-dd date and returns an array of four dates:
+        start of requested week
+        end of requested week 
+        following week start date
+        previous week start date
+    adapted from http://stackoverflow.com/questions/186431/calculating-days-of-week-given-a-week-number
+    */
+    list($year, $month, $day) = explode("-", $date);
+
+    // Get the weekday of the given date
+    $wkday = date('l',mktime('0','0','0', $month, $day, $year));
+
+    switch($wkday) {
+        case 'Monday': $numDaysToMon = 7; break;
+        case 'Tuesday': $numDaysToMon = 1; break;
+        case 'Wednesday': $numDaysToMon = 2; break;
+        case 'Thursday': $numDaysToMon = 3; break;
+        case 'Friday': $numDaysToMon = 4; break;
+        case 'Saturday': $numDaysToMon = 5; break;
+        case 'Sunday': $numDaysToMon = 6; break;   
+    }
+
+    // Timestamp of the monday for that week
+    $monday = mktime('0','0','0', $month, $day, $year);
+    $seconds_in_a_day = 86400;
+    $return[0] = date('Y-m-d',$monday);// requested week
+    $return[1] = date('Y-m-d',$monday+($seconds_in_a_day*$numDaysToMon));// end of requested week
+    $return[2] = date('Y-m-d',$monday+($seconds_in_a_day*($numDaysToMon))); // following week
+    $return[3] = date('Y-m-d',$monday+($seconds_in_a_day*($numDaysToMon - ($numDaysToMon+7)))); // previous week
+    return $return;
 }
 
-//May need this for week iteration:
-/*  w e e k n u m b e r  -------------------------------------- //
-weeknumber returns a week number from a given date (>1970, <2030)
-Wed, 2003-01-01 is in week 1
-Mon, 2003-01-06 is in week 2
-Wed, 2003-12-31 is in week 53, next years first week
-Be careful, there are years with 53 weeks.
-// ------------------------------------------------------------ */
-function weeknumber ($y, $m, $d) {
-  $wn = strftime("%W",mktime(0,0,0,$m,$d,$y));
-  $wn += 0; # wn might be a string value
-  $firstdayofyear = getdate(mktime(0,0,0,1,1,$y));
-
-  if ($firstdayofyear["wday"] != 1)    # if 1/1 is not a Monday, add 1
-  {
-      $wn += 1;
-  }
-  return ($wn);
-}
-
-function mz_validate_weeknum( $string ) {
-	if (preg_match('/^[0-9][0-9]?$|^53$/',$string))
+function mz_validate_date( $string ) {
+	if (preg_match('/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/',$string))
 	{
 		return $string;
 	}
@@ -341,46 +345,9 @@ function mz_validate_weeknum( $string ) {
 	}
 }
 
-function mz_validate_year( $string ) {
- 	if (preg_match('/^\d{4}$/',$string))
- 	{
-	 	return $string;
- 	}
- 	else
- 	{
- 		return "mz_validate_year error";
- 	}
-}
-
-function mZ_encrypt($input_string, $key){
-    if (($input_string == '') || ($input_string == 'MBO DEVELOPER KEY')) {
-        echo "Nada.";
-        return 'MBO DEVELOPER KEY';
-    }
-    $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB);
-    $iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
-    $h_key = hash('sha256', $key, TRUE);
-    echo "<br/>encrypted: ".base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, $h_key, $input_string, MCRYPT_MODE_ECB, $iv))." <br/>";
-    return base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, $h_key, $input_string, MCRYPT_MODE_ECB, $iv));
-}
-
-function mZ_decrypt($options, $encrypted_input_string, $key){
-    if ($encrypted_input_string == '') {
-        echo "Nothing.";
-        return '';
-    } elseif ($encrypted_input_string == $options['mz_mindbody_password']) {
-        $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB);
-        $iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
-        $h_key = hash('sha256', $key, TRUE);
-        echo "<br/>decrypted: ".trim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, $h_key, base64_decode($encrypted_input_string), MCRYPT_MODE_ECB, $iv))."<br/>";
-        return trim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, $h_key, base64_decode($options['mz_mindbody_password']), MCRYPT_MODE_ECB, $iv));
-    }
-    
-    return "nothing";
-}
 
 //Format arrays for display in development
-function pr($data)
+function mz_pr($data)
 {
   echo "<pre>";
   print_r($data);
