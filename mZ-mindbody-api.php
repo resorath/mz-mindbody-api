@@ -2,7 +2,7 @@
 /**
 Plugin Name: mZoo Mindbody Interface - Schedule, Events, Staff Display
 Description: Interface Wordpress with MindbodyOnline data with Bootstrap Responsive Layout
-Version: 1.4
+Version: 1.5
 Author: mZoo.org
 Author URI: http://www.mZoo.org/
 Plugin URI: http://www.mzoo.org/mz-mindbody-wp
@@ -176,7 +176,7 @@ if ( is_admin() )
 	function mz_mindbody_section_text() { ?>
 		<p><?php _e('Enter your mindbody credentials below.') ?></p>
 		<p><?php _e('If you do not have them yet, visit the') ?> <a href="https://api.mindbodyonline.com/Home/LogIn"><?php _e('MindBodyOnline developers website') ?></a> <?php _e('and register for developer credentials.')?></p>
-		<p><?php _e('Add to page or post with shortcode')?>: [mz-mindbody-show-schedule], [mz-mindbody-show-events], [mz-mindbody-staff-list]</p>
+		<p><?php _e('Add to page or post with shortcode')?>: [mz-mindbody-show-schedule], [mz-mindbody-show-events], [mz-mindbody-staff-list], [mz-mindbody-show-schedule type=day]</p>
 	<?php
 	/*
 	TODO:[mz-mindbody-show-schedule (type=day)],
@@ -330,7 +330,11 @@ function mz_getDateRange($date, $duration=7) {
     
     $monday = mktime('0','0','0', $month, $day-$numDaysFromMon, $year);
     $today = mktime('0','0','0', $month, $day, $year);
-    $rangeEnd = $today+($seconds_in_a_day*($duration - $numDaysFromMon));
+    if ($duration == 1){
+        $rangeEnd = $today+($seconds_in_a_day*$duration);
+    }else{
+        $rangeEnd = $today+($seconds_in_a_day*($duration - $numDaysFromMon));
+    }
     $previousRangeStart = $monday+($seconds_in_a_day*($numDaysFromMon - ($numDaysFromMon+$duration)));
     
     $return[0] = array('StartDateTime'=>date('Y-m-d',$today), 'EndDateTime'=>date('Y-m-d',$rangeEnd-1));
