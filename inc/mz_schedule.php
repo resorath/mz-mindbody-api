@@ -3,12 +3,10 @@ function mZ_mindbody_show_schedule( $atts )
 {
 	require_once MZ_MINDBODY_SCHEDULE_DIR .'inc/mz_mbo_init.inc';
 
-
 	// optionally pass in a type parameter. Defaults to week.
 	extract( shortcode_atts( array(
 		'type' => 'week'
 			), $atts ) );
-			
     $mz_date = empty($_GET['mz_date']) ? date_i18n('Y-m-d') : mz_validate_date($_GET['mz_date']);
 
 	if ($type=='day')
@@ -21,7 +19,7 @@ function mZ_mindbody_show_schedule( $atts )
 	    $mz_timeframe = array_slice(mz_getDateRange($mz_date, 7), 0, 1);
 		$mz_schedule_cache = "mz_schedule_week_cache";
 	}
-	
+
 	//While we still eed to support php 5.2 and can't use [0] on above
 	$mz_timeframe = array_pop($mz_timeframe);
 	
@@ -36,7 +34,7 @@ function mZ_mindbody_show_schedule( $atts )
 	//Send the timeframe to the GetClasses class, unless already cached
 	$mz_schedule_data = $mb->GetClasses($mz_timeframe);
 	}
-
+    //mz_pr($mz_schedule_data);
 	//Cache the mindbody call for 24 hours
 	// TODO make cache timeout configurable.
 	set_transient($mz_schedule_cache, $mz_schedule_data, 60 * 60 * 24);
@@ -50,6 +48,7 @@ function mZ_mindbody_show_schedule( $atts )
 
 		$mz_days = $mb->makeNumericArray($mz_schedule_data['GetClassesResult']['Classes']['Class']);
 		$mz_days = sortClassesByDate($mz_days);
+
 		    $return .= '<div id="mz_mbo_schedule" class="mz_mbo_schedule">';
 		if ($type=='week'){
 		    $return .= mz_mbo_schedule_nav($mz_date);
@@ -74,7 +73,7 @@ function mZ_mindbody_show_schedule( $atts )
 					$sclassid = $class['ClassScheduleID'];
 					$classDescription = $class['ClassDescription']['Description'];
 					$sType = -7;
-					$linkURL = "https://clients.mindbodyonline.com/ws.asp?sDate={$sDate}&sLoc={$sLoc}&sTG={$sTG}&sType={$sType}&sclassid={$sclassid}&studioid={$studioid}";
+					$linkURL = "https://clients.mindbodyonline.com/ws.asp?sDate={$sDate}&amp;sLoc={$sLoc}&amp;sTG={$sTG}&amp;sType={$sType}&amp;sclassid={$sclassid}&amp;studioid={$studioid}";
 					$className = $class['ClassDescription']['Name'];
 					$startDateTime = date_i18n('Y-m-d H:i:s', strtotime($class['StartDateTime']));
 					$endDateTime = date_i18n('Y-m-d H:i:s', strtotime($class['EndDateTime']));
@@ -86,12 +85,12 @@ function mZ_mindbody_show_schedule( $atts )
 					$return .= '<tr><td>';
 					$return .= date_i18n('g:i a', strtotime($startDateTime)) . ' - ' . date_i18n('g:i a', strtotime($endDateTime));
 					// only show the schedule button if enabled in MBO
-					$return .= $isAvailable ? '<br><a class="btn" href="' . $linkURL . '" target="_newbrowser">' . __('Sign-Up') . '</a>' : '';
+					$return .= $isAvailable ? '<br><a class="btn" href="' . $linkURL . '" target="_blank">' . __('Sign-Up') . '</a>' : '';
 
 					$return .= '</td><td>';
 
 					// trigger link modal
-					$return .= '<a data-toggle="modal" data-target="#mzModal" href="' . MZ_MINDBODY_SCHEDULE_URL . 'inc/modal_descriptions.php?classDescription=' . urlencode(substr($classDescription, 0, 1000)) . '&className='. urlencode(substr($className, 0, 1000)) .'">' . $className . '</a>';
+					$return .= '<a data-toggle="modal" data-target="#mzModal" href="' . MZ_MINDBODY_SCHEDULE_URL . 'inc/modal_descriptions.php?classDescription=' . urlencode(substr($classDescription, 0, 1000)) . '&amp;className='. urlencode(substr($className, 0, 1000)) .'">' . $className . '</a>';
 
 					$return .= '</td><td>';
 					$return .= $staffName;
@@ -113,7 +112,8 @@ function mZ_mindbody_show_schedule( $atts )
 		// modal-content needs to live here for dynamic loading to work
 		// this still doesn't work because content is only loaded on
 		// the first click.  Not sure how to force content reload each click
-		$return .= '<div id="mzModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mzModalLabel" aria-hidden="true">
+		//Mike iLL removed aria-labelledby="mzModalLabel"
+		$return .= '<div id="mzModal" class="modal fade" tabindex="-1" role="dialog"  aria-hidden="true">
                  <div class="modal-content">
 
 				</div>

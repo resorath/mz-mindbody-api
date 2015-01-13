@@ -2,7 +2,7 @@
 /**
 Plugin Name: mZoo Mindbody Interface - Schedule, Events, Staff Display
 Description: Interface Wordpress with MindbodyOnline data with Bootstrap Responsive Layout
-Version: 1.5
+Version: 1.6
 Author: mZoo.org
 Author URI: http://www.mZoo.org/
 Plugin URI: http://www.mzoo.org/mz-mindbody-wp
@@ -35,6 +35,54 @@ function mZ_mindbody_schedule_uninstall(){
 	//actions to perform once on plugin uninstall go here
 	delete_option('mz_mindbody_options');
 }
+
+//TODO Deal with conflict when $mb class get's called twice
+add_action('widgets_init', 'mZ_mindbody_schedule_register_widget');
+
+function mZ_mindbody_schedule_register_widget() {
+    register_widget( 'mZ_Mindbody_day_schedule');
+}
+
+class mZ_Mindbody_day_schedule extends WP_Widget {
+
+    function mZ_Mindbody_day_schedule() {
+        $widget_ops = array(
+            'classname' => 'mZ_Mindbody_day_schedule_class',
+            'description' => 'Display class schedule for current day.'
+            );
+        $this->WP_Widget('mZ_Mindbody_day_schedule', 'Today\'s MindBody Schedule',
+                            $widget_ops );
+    } 
+    
+    function form($instance){
+        $defaults = array('title' => 'Today\'s Classes');
+        $instance = wp_parse_args( (array) $instance, $defaults);
+        $title = $instance['title'];
+        ?>
+           <p>Title: <input class="widefat" name="<?php echo $this->get_field_name( 'title' ); ?>"  
+           type="text" value="<?php echo esc_attr( $title ); ?>" /></p>
+        <?php
+    }
+    
+    //save the widget settings
+    function update($new_instance, $old_instance) {
+        $instance = $old_instance;
+        $instance['title'] = strip_tags( $new_instance['title'] );
+        return $instance;
+    }
+    
+    function widget($args, $instance){
+        extract($args);
+        echo $before_widget;
+        $title = apply_filters( 'widget_title', $instance['title'] );
+        $arguments['type'] = 'day';
+        if (!empty($title) ) 
+            { echo $before_title . $title . $after_title; };
+            echo(mZ_mindbody_show_schedule($arguments));
+        echo $after_widget;
+    }
+}
+
 
 if ( is_admin() )
 { // admin actions
@@ -261,6 +309,20 @@ if ( is_admin() )
 }
 else
 {// non-admin enqueues, actions, and filters
+
+    add_action('init', 'myStartSession', 1);
+    add_action('wp_logout', 'myEndSession');
+    add_action('wp_login', 'myEndSession');
+
+    function myStartSession() {
+        if(!session_id()) {
+            session_start();
+        }
+    }
+
+    function myEndSession() {
+        session_destroy ();
+    }
 
   add_action( 'wp_enqueue_script', 'load_jquery' );
 	function load_jquery() {
