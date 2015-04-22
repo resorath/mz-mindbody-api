@@ -61,6 +61,9 @@ You need to register a developer account with MindBody, which costs $5+ per webs
 
 == Changelog ==
 
+= 1.7 =
+Add option for multiple locations.
+
 = 1.6 =
 Fix some HTML validation errors in schedule table layout. 
 
@@ -80,6 +83,9 @@ Fix navigation on Schedule page when Force Cache not selected.
 Initial release.
 
 == Upgrade Notice ==
+
+= 1.7 =
+Multiple location support for schedules.
 
 = 1.6 =
 Add Today's Schedule widget - must be only MBO call on page!

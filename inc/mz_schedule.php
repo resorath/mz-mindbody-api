@@ -5,7 +5,8 @@ function mZ_mindbody_show_schedule( $atts )
 
 	// optionally pass in a type parameter. Defaults to week.
 	extract( shortcode_atts( array(
-		'type' => 'week'
+		'type' => 'week',
+		'location' => '1'
 			), $atts ) );
     $mz_date = empty($_GET['mz_date']) ? date_i18n('Y-m-d') : mz_validate_date($_GET['mz_date']);
 
@@ -64,7 +65,7 @@ function mZ_mindbody_show_schedule( $atts )
 
 			foreach($mz_classes as $class)
 			{
-				if (!(($class['IsCanceled'] == 'TRUE') && ($class['HideCancel'] == 'TRUE')))
+				if (!(($class['IsCanceled'] == 'TRUE') && ($class['HideCancel'] == 'TRUE')) && ($class['Location']['ID'] == $location))
 				{
 					$sDate = date_i18n('m/d/Y', strtotime($class['StartDateTime']));
 					$sLoc = $class['Location']['ID'];
@@ -112,8 +113,7 @@ function mZ_mindbody_show_schedule( $atts )
 		// modal-content needs to live here for dynamic loading to work
 		// this still doesn't work because content is only loaded on
 		// the first click.  Not sure how to force content reload each click
-		//Mike iLL removed aria-labelledby="mzModalLabel"
-		$return .= '<div id="mzModal" class="modal fade" tabindex="-1" role="dialog"  aria-hidden="true">
+		$return .= '<div id="mzModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mzSmallModalLabel" aria-hidden="true">
                  <div class="modal-content">
 
 				</div>
