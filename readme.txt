@@ -61,6 +61,9 @@ You need to register a developer account with MindBody, which costs $5+ per webs
 
 == Changelog ==
 
+= 1.8 =
+Bug fix session check add alternate for php versions.
+
 = 1.7 =
 Add option for multiple locations.
 
