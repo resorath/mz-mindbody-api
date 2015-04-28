@@ -3,8 +3,8 @@ Contributors: mikeill, rtzee
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A95ZEELLHGECE
 Tags: mindbody, schedule, calendar, yoga, soap, pear
 Requires at least: 3.0.1
-Tested up to: 4.1
-Stable tag: 1.6
+Tested up to: 4.2.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -61,7 +61,7 @@ You need to register a developer account with MindBody, which costs $5+ per webs
 
 == Changelog ==
 
-= 1.8 =
+= 1.7.2 =
 Bug fix session check add alternate for php versions.
 
 = 1.7 =
