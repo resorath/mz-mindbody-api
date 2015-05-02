@@ -1,7 +1,14 @@
 <?php
 class MB_API {
 	protected $client;
-
+	/*
+** Uncomment if you need user credentials
+protected $userCredentials = array(
+"Username"=>'REPLACE_WITH_YOUR_USERNAME',
+"Password"=>'REPLACE_WITH_YOUR_PASSWORD',
+"SiteIDs"=>array('REPLACE_WITH_YOUR_SITE_ID')
+);
+*/
 	protected $appointmentServiceWSDL = "https://api.mindbodyonline.com/0_5/AppointmentService.asmx?WSDL";
 	protected $classServiceWSDL = "https://api.mindbodyonline.com/0_5/ClassService.asmx?WSDL";
 	protected $clientServiceWSDL = "https://api.mindbodyonline.com/0_5/ClientService.asmx?WSDL";
@@ -129,8 +136,9 @@ class MB_API {
 	}
 
 	public function debug() {
-		echo "<textarea>".print_r($this->getXMLRequest(),1)."</textarea>";
-		echo "<textarea>".print_r($this->getXMLResponse(),1)."</textarea>";
+		echo "<textarea rows='6' cols='90'>".print_r($this->getXMLRequest(),1)."</textarea>";
+		echo "<br/>";
+		echo "<textarea rows='6' cols='90'>".print_r($this->getXMLResponse(),1)."</textarea>";
 	}
 
 	public function makeNumericArray($data) {
@@ -179,7 +187,11 @@ class MB_API {
 		if($returnObject) {
 			return $res[0];
 		} else {
-			return $this->replace_empty_arrays_with_nulls(json_decode(json_encode($res[0]),1));
+		$arr = $this->replace_empty_arrays_with_nulls(json_decode(json_encode($res[0]),1));
+		if(is_array($arr['FunctionDataXmlResult']['Results']['Row'])) {
+			$arr['FunctionDataXmlResult']['Results']['Row'] = $this->makeNumericArray($arr['FunctionDataXmlResult']['Results']['Row']);
+			}
+			return $arr;
 		}
 	}
 }
