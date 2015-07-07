@@ -55,8 +55,7 @@ You need to register a developer account with MindBody, which costs $5+ per webs
 == Changelog ==
 
 = 2.0.0 =
-This release includes the most new features and also uses a more minimal version of bootstrap code:
-just the necessary components.
+This release includes the most new features and also uses a more minimal version of bootstrap code: just the necessary components. New jQuery filter, grid mode schedule view, configurable event cycle duration, multiple accounts and locations can be shown also via shortcode attributes. Internationalized - so far Spanish and Portuguese.
 
 = 1.6 =
 Fix some HTML validation errors in schedule table layout. 
