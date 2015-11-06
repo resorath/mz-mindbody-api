@@ -13,10 +13,11 @@ class MZ_Mindbody_Schedule_Display {
 	public function mZ_mindbody_show_schedule( $atts, $account=0 )
 	{
 		require_once(MZ_MINDBODY_SCHEDULE_DIR .'/lib/html_table.class.php');
-
-		global $add_mz_ajax_script;
-		$add_mz_ajax_script = true;
-    
+		
+		wp_enqueue_style('mZ_mindbody_schedule_bs', asset_path('styles/main.css'), false, null);
+		wp_enqueue_script('modernizr', asset_path('scripts/modernizr.js'), array(), null, true);
+		wp_enqueue_script('mz_mbo_bootstrap_script', asset_path('scripts/main.js'), array('jquery'), null, true);
+		    
 		// optionally pass in a type parameter. Defaults to week.
 		$atts = shortcode_atts( array(
 			'type' => 'week',
@@ -25,8 +26,10 @@ class MZ_Mindbody_Schedule_Display {
 			'account' => '0',
 			'filter' => '0',
 			'grid' => '0',
+			'advanced' => '0',
 			'hide' => '',
-			'class_types' => ''
+			'class_types' => '',
+			'show_registrants' => '0'
 				), $atts );
 		$type = $atts['type'];
 		$location = $atts['location'];
@@ -34,7 +37,13 @@ class MZ_Mindbody_Schedule_Display {
 		$account = $atts['account'];
 		$filter = $atts['filter'];
 		$grid = $atts['grid'];
+		$advanced = $atts['advanced'];
 		$class_types = $atts['class_types'];
+		$clientID = isset($_SESSION['GUID']) ? $_SESSION['client']['ID'] : '';
+		$show_registrants = $atts['show_registrants'];
+		
+		$sign_up_text = __('Sign-Up', 'mz-mindbody-api');
+		$manage_text = __('Manage on MindBody Site', 'mz-mindbody-api');
 			
 	
 		if (($grid == 1) && ($type == 'day')) {
@@ -64,12 +73,12 @@ class MZ_Mindbody_Schedule_Display {
 		if ($type==__('day', 'mz-mindbody-api'))
 		{
 			$mz_timeframe = array_slice(mz_getDateRange($mz_date, 1), 0, 1);
-			$mz_schedule_cache = "mz_schedule_day_cache_" . mt_rand(1, 10);
+			$mz_schedule_cache = "mz_schedule_day_cache";
 		}
 		else
 		{   
 			$mz_timeframe = array_slice(mz_getDateRange($mz_date, 7), 0, 1);
-			$mz_schedule_cache = "mz_schedule_week_cache_" . mt_rand(1, 10);
+			$mz_schedule_cache = "mz_schedule_week_cache";
 		}
 
 		//While we still need to support php 5.2 and can't use [0] on above
@@ -80,26 +89,13 @@ class MZ_Mindbody_Schedule_Display {
 		$mz_cache_reset = isset($this->mz_mbo_globals->options['mz_mindbody_clear_cache']) ? "on" : "off";
 
 		if ( $mz_cache_reset == "on" ){
-
-		global $wpdb;
-    	$sql = "SELECT `option_name` AS `name`, `option_value` AS `value`
-            FROM  $wpdb->options
-            WHERE `option_name` LIKE '%transient_%'
-            ORDER BY `option_name`";
-
-   		$results = $wpdb->get_results( $sql );
-
-		foreach ( $results as $result ) {
-				if ( false !== strpos($result->name, 'mz_schedule') ) {
-					delete_transient( substr($result->name, 11) );
-					}
-			}
+			delete_transient( $mz_schedule_cache );
 		}
-    
-		$mz_schedule_data = get_transient( $mz_schedule_cache );
-
-		if (isset($_GET['mz_date']) || ( '' == $mz_schedule_data ) ){
-			/* uncomment line mz_pr("OKAY We ARE DOING IT."); in inc/mz_mbo_init.php
+		
+		
+		if (isset($_GET) || ( false === ( $mz_schedule_data = get_transient( $mz_schedule_cache ) ) ) ) {
+			/* If receiving parameters in $_GET or transient deleted we need to send a new date range so reset transient
+			 * uncomment line mz_pr("OKAY We ARE DOING IT."); in inc/mz_mbo_init.php
 			 * to see confirmation in broser of if MBO was called with the following 
 			 * line.
 			*/
@@ -118,7 +114,7 @@ class MZ_Mindbody_Schedule_Display {
 			//Cache the mindbody call for 24 hours
 			// TODO make cache timeout configurable.
 			set_transient($mz_schedule_cache, $mz_schedule_data, 60 * 60 * 24);
-			
+		   // END caching*/
 		}
 
 		$return = '';
@@ -171,12 +167,16 @@ class MZ_Mindbody_Schedule_Display {
 						$studioid = $class['Location']['SiteID'];
 						$sclassid = $class['ClassScheduleID'];
 						$sclassidID = $class['ID'];
+						//mz_pr($sclassidID);
 						$classDescription = $class['ClassDescription']['Description'];
 						$sType = -7;
 						$showCancelled = ($class['IsCanceled'] == 1) ? '<div class="mz_cancelled_class">' .
 										__('Cancelled', 'mz-mindbody-api') . '</div>' : '';
 						$className = $class['ClassDescription']['Name'];
+						//mz_pr($className);
 						$startDateTime = date_i18n('Y-m-d H:i:s', strtotime($class['StartDateTime']));
+						//mz_pr($startDateTime);
+						//echo "<hr/>";
 						$endDateTime = date_i18n('Y-m-d H:i:s', strtotime($class['EndDateTime']));
 						$staffName = $class['Staff']['Name'];
 						$isAvailable = $class['IsAvailable'];
@@ -197,24 +197,60 @@ class MZ_Mindbody_Schedule_Display {
 						$tbl->addCell($time_of_day, 'hidden', 'data');
 
 						if (isset($isAvailable) && ($isAvailable != 0)) {
+							if ($advanced == 1){
+								$add_to_class_nonce = wp_create_nonce( 'mz_MBO_add_to_class_nonce');
+								if ($clientID == ''){
+										 $signupButton = '<a class="btn mz_add_to_class" href="'.home_url().'/login"' .
+										 'title="' . __('Login to Sign-up', 'mz-mindbody-api') . '">' . 
+										 __('Login to Sign-up', 'mz-mindbody-api') . '</a><br/>';
+									  }else{
+										  $signupButton = '<br/>' 
+											. '	<a id="mz_add_to_class" class="btn mz_add_to_class"' 
+											. ' data-nonce="' . $add_to_class_nonce 
+											. '" data-classID="' . $sclassidID  
+											. '" data-clientID="' . $clientID 
+											. '">' .
+											'<span class="count" style="display:none">0</span>' . 
+											'<span class="signup">'. $sign_up_text .
+											'</span></a>' ;
+											}
+									}else{
+										$signupButton = '<a class="btn" href="' . $linkURL . '" target="_blank">' . $sign_up_text . '</a>';
+									}
+									
 								$tbl->addCell(date_i18n($this->mz_mbo_globals->time_format, strtotime($startDateTime)) . ' - ' . 
-									date_i18n($this->mz_mbo_globals->time_format, strtotime($endDateTime)) .
-									'<br/><a class="btn" href="' . $linkURL . '" target="_blank">' . __('Sign-Up', 'mz-mindbody-api') . '</a>');
+								date_i18n($this->mz_mbo_globals->time_format, strtotime($endDateTime)) .
+								'<br/>' . $signupButton );
 							}else{ 
 								$tbl->addCell(date_i18n($this->mz_mbo_globals->time_format, strtotime($startDateTime)) . ' - ' . 
 									date_i18n($this->mz_mbo_globals->time_format, strtotime($endDateTime)), 'mz_date_display');
 									}
 
+						if ($show_registrants == 1){
+						$get_registrants_nonce = wp_create_nonce( 'mz_MBO_get_registrants_nonce');
+							$tbl->addCell(
+								'<br/> 
+											<a class="modal-toggle mz_get_registrants ' . $className .'" data-toggle="modal" data-target="#registrantModal"' 
+											. 'data-nonce="' . $get_registrants_nonce 
+											. '" data-classDescription="' . rawUrlEncode($classDescription) 
+											. '" data-className="' . $className 
+											. '" data-classID="' . $sclassidID  . '" href="#">' . $className . '</a>'
+											. '<br/><div id="visitMBO" class="btn visitMBO" style="display:none">' .
+							$manage_text . '</a></div>' .
+							$showCancelled
+										);
+						} else {
 						$tbl->addCell(
-							'<a data-toggle="modal" data-target="#mzModal" href="' . MZ_MINDBODY_SCHEDULE_URL . 
-							'inc/modal_descriptions.php?classDescription=' . 
-							urlencode(substr($classDescription, 0, 1000)) . 
-							'&amp;className='. urlencode(substr($className, 0, 1000)) .'">' . $className . '</a>' .
+							'<a class="class_name ' . $className . '" data-toggle="modal" data-target="#mzModal" ' .
+									'data-maincontent="' . rawurlencode(substr($classDescription, 0, 1000)) . 
+									'" href="' . MZ_MINDBODY_SCHEDULE_URL . 
+									'inc/modal_descriptions.php?className='. urlencode(substr($className, 0, 1000)) .'">' . $className . '</a>' .
 						// trigger link modal
 								'<br/><div id="visitMBO" class="btn visitMBO" style="display:none">' .
 							'<a href="'.$linkURL.'" target="_blank">' .
-							__('Manage on MindBody Site',' mz-mindbody-api') . '</a></div>' .
-							$showCancelled , 'mz_classDetails');
+							$manage_text . '</a></div>' .
+							$showCancelled );
+							}
 
 
 						$tbl->addCell($staffName, 'mz_staffName');
@@ -337,24 +373,65 @@ class MZ_Mindbody_Schedule_Display {
 									$class_separator = ($key == $num_classes_min_one) ? '' : '<hr/>';
 									$linkURL = "https://clients.mindbodyonline.com/ws.asp?sDate={$sDate}&amp;sLoc={$sLoc}&amp;sTG={$sTG}&amp;sType={$sType}&amp;sclassid={$sclassid}&amp;studioid={$studioid}";
 									if(!in_array('signup', $hide)){
-									$signupButton = '&nbsp;<a href="'.$linkURL.'" target="_blank" title="'.
-													__('Sign-Up', 'mz-mindbody-api'). '"><i class="fa fa-sign-in"></i></a><br/>';
-										}else{$signupButton = '';}
+									//TODO Are advanced and show_registrants compatible?
+										if ($advanced == 1){
+											if (isset($isAvailable) && ($isAvailable != 0)) {
+												$add_to_class_nonce = wp_create_nonce( 'mz_MBO_add_to_class_nonce');
+												if ($clientID == ''){
+													 $signupButton = '<a class="btn mz_add_to_class fa fa-sign-in" href="'.home_url().'/login"' .
+													 'title="' . __('Login to Sign-up', 'mz-mindbody-api') . '"></a><br/>';
+													  }else{
+													  $signupButton = '<br/><a id="mz_add_to_class" class="fa fa-sign-in mz_add_to_class"' 
+														. 'title="' . $sign_up_text . '"'
+														. ' data-nonce="' . $add_to_class_nonce 
+														. '" data-classID="' . $sclassidID  
+														. '" data-clientID="' . $clientID 
+														. '"></a>' .
+														'&nbsp; <span class="signup"> ' .
+														'</span></a>&nbsp;' . 
+														'<a id="visitMBO" class="fa fa-wrench visitMBO" href="'.$linkURL.'" target="_blank" ' . 
+														'style="display:none" title="' .
+														$manage_text . '"></a><br/>';
+														}
+												}
+											}else{
+												$signupButton = '&nbsp;<a href="'.$linkURL.'" target="_blank" title="'.
+																__('Sign-Up', 'mz-mindbody-api'). '"><i class="fa fa-sign-in"></i></a><br/>';
+													}
+									}else{
+										$signupButton = '';
+										}
 									$session_type_css = sanitize_html_class($sessionTypeName, 'mz_session_type');
+									
+									if ($show_registrants == 1){
+										$get_registrants_nonce = wp_create_nonce( 'mz_MBO_get_registrants_nonce');
+										$class_details .= '<br/> 
+											<a class="modal-toggle mz_get_registrants ' . $className .'" data-toggle="modal" data-target="#registrantModal"' 
+											. 'data-nonce="' . $get_registrants_nonce 
+											. '" data-classDescription="' . rawUrlEncode($classDescription) 
+											. '" data-className="' . $className 
+											. '" data-classID="' . $sclassidID  . '" href="#">' . $className . '</a>'
+											. ' ' . $teacher
+											. '<br/>' .	 
+									$teacher . $signupButton .
+									$classLength . $showCancelled . $locationNameDisplay . '</div>' .
+									$class_separator;
+						} else {
 
-									$class_details .= '<div class="mz_schedule_table mz_location_'.$sLoc.' '.'mz_' . 
+									$class_details .= '<div class="mz_schedule_table mz_description_holder mz_location_'.$sLoc.' '.'mz_' . 
 									$session_type_css .'">' .
-									'<a data-toggle="modal" data-target="#mzModal" href="' . MZ_MINDBODY_SCHEDULE_URL . 
-									'inc/modal_descriptions.php?classDescription=' . 
-									urlencode(substr($classDescription, 0, 1000)) . 
-									'&amp;className='. urlencode(substr($className, 0, 1000)) .'">' . $className . '</a>' .
+									'<a data-toggle="modal" data-target="#mzModal" ' .
+									'data-maincontent="' . rawurlencode(substr($classDescription, 0, 1000)) .
+									'" href="' . MZ_MINDBODY_SCHEDULE_URL . 
+									'inc/modal_descriptions.php?className='. urlencode(substr($className, 0, 1000)) .'">' . $className . '</a>' .
 									'<br/>' .	 
 									$teacher . $signupButton .
 									$classLength . $showCancelled . $locationNameDisplay . '</div>' .
 									$class_separator;
+									} // ./if not $registrants
 								}
 							}
-						$tbl->addCell($class_details, 'mz_description_holder');
+						$tbl->addCell($class_details);
 					
 					}//end foreach mz_classes
 				}//end foreach mz_days
@@ -385,16 +462,38 @@ class MZ_Mindbody_Schedule_Display {
 			}
 		}//EOF If Result / Else
 		
+		if ($filter == 1):
+			add_action('wp_footer', array($this, 'add_filter_table'));
+			add_action('wp_footer', array($this, 'initialize_filter'));
+		endif;
 		
-		add_action('wp_footer', array($this, 'add_filter_table'));
-		add_action('wp_footer', array($this, 'initialize_filter'));
+		if ($show_registrants == 1 ): ?>
+
+				<div class="modal fade" id="registrantModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+								<h4 class="modal-title ' . $className .'" id="ClassTitle"></h4>
+							</div>
+							<div class="modal-body" id="class-description-modal-body"></div>
+							<div class="modal-body" id="ClasseRegistrants"></div>
+							<div class="modal-footer">
+							</div>
+						</div>
+					</div>
+				</div>
+		
+		<?php endif;
 		
 		$mz_schedule_display = 'mz_schedule_display_' . mt_rand(1, 1000000);
 
 		set_transient($mz_schedule_display, $return, 60 * 60 * 24);
 
 		return get_transient( $mz_schedule_display );
+		
 
+				
 	}//EOF mZ_show_schedule
 	
 	public function makeNumericArray($data) {
@@ -417,26 +516,31 @@ class MZ_Mindbody_Schedule_Display {
 			));
 
 		?>
+		
+		<!-- Start mZ_mindbody-api filterTable configuration -->
 		<script type="text/javascript">
 			$(document).ready(function() {
-			var stripeTable = function(table) { //stripe the table (jQuery selector)
-					table.find('tr').removeClass('striped').filter(':visible:even').addClass('striped');
-				};
+				var stripeTable = function(table) { //stripe the table (jQuery selector)
+						table.find('tr').removeClass('striped').filter(':visible:even').addClass('striped');
+					};
 
-				$('table.mz-schedule-filter').filterTable({
-					callback: function(term, table) { stripeTable(table); }, //call the striping after every change to the filter term
-					placeholder: mz_mindbody_api_i18n.filter_default,
-					highlightClass: 'alt',
-					inputType: 'search',
-					label: mz_mindbody_api_i18n.label,
-					selector: mz_mindbody_api_i18n.selector,
-					quickListClass: 'mz_quick_filter',
-					quickList: [mz_mindbody_api_i18n.quick_1, mz_mindbody_api_i18n.quick_2, mz_mindbody_api_i18n.quick_3],
-					locations: mz_mindbody_api_i18n.Locations_dict
+					$('table.mz-schedule-filter').filterTable({
+						callback: function(term, table) { stripeTable(table); }, //call the striping after every change to the filter term
+						placeholder: mz_mindbody_api_i18n.filter_default,
+						highlightClass: 'alt',
+						inputType: 'search',
+						label: mz_mindbody_api_i18n.label,
+						selector: mz_mindbody_api_i18n.selector,
+						quickListClass: 'mz_quick_filter',
+						quickList: [mz_mindbody_api_i18n.quick_1, mz_mindbody_api_i18n.quick_2, mz_mindbody_api_i18n.quick_3],
+						locations: mz_mindbody_api_i18n.Locations_dict
+					});
+					stripeTable($('table.mz-schedule-filter')); //stripe the table for the first time
 				});
-				stripeTable($('table.mz-schedule-filter')); //stripe the table for the first time
-			});
 		</script>
+		<!-- End mZ_mindbody-api filterTable configuration -->		
+
+		
 		<?php
 	}
 	

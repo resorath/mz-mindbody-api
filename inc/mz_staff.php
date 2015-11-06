@@ -9,6 +9,7 @@ class MZ_MBO_Staff {
 		$this->mz_mbo_globals = new MZ_Mindbody_Init();
 	}
 
+	
 	public function mZ_mindbody_staff_listing($atts, $account=0) {
 	
 	  $options = get_option( 'mz_mindbody_options','Option Not Set' );
@@ -16,10 +17,19 @@ class MZ_MBO_Staff {
 	  $mz_staff_cache = "mz_staff_cache";
   
 	  // optionally pass in a type parameter. Defaults to week.
-		extract( shortcode_atts( array(
-			'account' => '0'
-				), $atts ) );
-			
+		$atts = shortcode_atts( array(
+			'account' => '0',
+			'gallery' => '0'
+				), $atts );
+		$account = $atts['account'];
+		$gallery = $atts['gallery'];
+		
+		wp_enqueue_style('mZ_mindbody_schedule_bs', asset_path('styles/main.css'), false, null);
+		wp_enqueue_script('modernizr', asset_path('scripts/modernizr.js'), array(), null, true);
+		
+		if ($gallery == 1)
+			wp_enqueue_script('mz_mbo_bootstrap_script', asset_path('scripts/main.js'), array('jquery'), null, true);
+		
 	  if ( $mz_cache_reset == "on" ){
 		delete_transient( $mz_staff_cache );
 	  }
@@ -41,7 +51,12 @@ class MZ_MBO_Staff {
 	
 	  }
 
-	  $return = '';
+	  $return = <<<EFD
+		   <!-- Page Content -->
+    <div class="container">
+
+        <div class="row">
+EFD;
 
 	  $mz_staff_list = $mbo_staff_data['GetStaffResult']['StaffMembers']['Staff'];
 
@@ -49,34 +64,74 @@ class MZ_MBO_Staff {
 	  //usort($mz_staff_list, $this->sortById());;
 
 	  $mz_empty_tags_pattern = "/<[^\/>]*>(\s|xC2xA0|&nbsp;)*<\/[^>]*>/";
+	  
+		if ($account != "0") {
+			$mz_site_id = $account;
+			} else {
+			$mz_site_id = $options['mz_mindbody_siteID'];
+			}
+		$MBO_URL_PARTS = array('http://clients.mindbodyonline.com/ws.asp?studioid=',
+											'&stype=-7&sView=week&sTrn=');
 
 	  foreach ($mz_staff_list as $staff_member)
 	  {
 		if (!empty($staff_member['Bio']) && !empty($staff_member['ImageURL']))
 		{
-		  $mz_staff_name = $staff_member['Name'];
-		  $mz_staff_bio = $staff_member['Bio'];
-		  $mz_staff_bio = str_replace($mz_empty_tags_pattern, '', $mz_staff_bio);
-		  $mz_staff_image = $staff_member['ImageURL'];
-		  $mz_staff_id = $staff_member['ID'];
+			$mz_staff_name = $staff_member['Name'];
+			$mz_staff_bio = $staff_member['Bio'];
+			$mz_staff_bio = str_replace($mz_empty_tags_pattern, '', $mz_staff_bio);
 
-		  $return .= '<div class="mz_mbo_staff_profile clearfix">';
-		  $return .= '<div class="mz_mbo_staff_caption">';
-		  $return .= '<h3>' . $mz_staff_name . '</h3>';
-		  $return .= '</div>';
-		  $return .= '<div class="mz_mbo_staff_bio">';
-		  $return .= '<div class="mz_mbo_staff_photo">';
-		  $return .= '<img src="' . $mz_staff_image . '" alt="">';
-		  $return .= '<p class="mz_mbo_staff_schedule">';
-		  $return .= '<a href="http://clients.mindbodyonline.com/ws.asp?studioid=' . $options['mz_mindbody_siteID'] . '&stype=-7&sView=week&sTrn=' . $mz_staff_id . '" class="btn btn-info">See ' . $mz_staff_name .'&apos;s Schedule</a>';
-		  $return .= '</p>';
-		  $return .= '</div>';
-		  $return .= '</div>';
-		  $return .= $mz_staff_bio;
-		  $return .= '</div>';
-		  $return .= '<hr/>';
-		}
+			//TODO Abstract this (with regular expressions?).
+			if (substr($mz_staff_bio, 0, 3) == '<p>') {
+					$mz_staff_bio = substr($mz_staff_bio, 3);
+					$mz_replace_dom_start = '<p>';
+				} else if (substr($mz_staff_bio, 0, 5) == '<div>'){
+					$mz_staff_bio = substr($mz_staff_bio, 5);
+					$mz_replace_dom_start = '<div>';
+				} else {
+					$mz_replace_dom_start = '';
+				}
+				
+			$mz_staff_image = $staff_member['ImageURL'];
+			$mz_staff_id = $staff_member['ID'];
+		  
+			if ($gallery == 0) {
+				$return .= '<div class="mz_mbo_staff_profile clearfix">';
+				$return .= '<div class="mz_mbo_staff_caption">';
+				$return .= '<h3>' . $mz_staff_name . '</h3>';
+				$return .= '</div>';
+				$return .= '<div class="mz_mbo_staff_bio">';
+				$return .= $mz_replace_dom_start . ' <img src="' . $mz_staff_image . '" alt="' . $mz_staff_name . '" class="img-responsive mz_modal_staff_image_body">';
+				$return .= $mz_staff_bio;
+				$return .= '</div>';
+				$return .= '</div>';
+				$return .= '<p class="mz_mbo_staff_schedule">';
+				$return .= '<a href="'. $MBO_URL_PARTS[0] . $mz_site_id . $MBO_URL_PARTS[1] . $mz_staff_id . '" class="btn btn-info mz-btn-info" target="_blank">See ' . $mz_staff_name .'&apos;s Schedule</a>';
+				$return .= '</p>';
+				$return .= '<hr style="clear:both"/>';
+		  } else {
+				$return .=     '<div class="col-lg-3 col-md-4 col-xs-6 mz-staff-thumb">';
+				$return .=     '<a class="thumbnail" data-toggle="modal" data-target="#mzModal" data-maincontent="'. rawUrlEncode($mz_staff_bio) .'" href="' . MZ_MINDBODY_SCHEDULE_URL . 
+							'inc/modal_biographies.php?staffName='. urlencode(substr($mz_staff_name, 0, 1000)) .
+							'&amp;staffID='. urlencode(substr($mz_staff_id, 0, 1000)) .
+							'&amp;siteID='. urlencode(substr($mz_site_id, 0, 1000)) .
+							'&amp;domStart='. $mz_replace_dom_start .
+							'&amp;staffImage='. urlencode(substr($mz_staff_image, 0, 1000)) .'">';
+				$return .=             sprintf('<img class="img-responsive mz-staff-image" src="%s" alt="">', $mz_staff_image);
+				$return .= 						sprintf('<div class="mz-staff-name">%s</div>',$mz_staff_name);
+				$return .=        ' </a>';
+				$return .=     '</div>';
+			}
 	  }
+	}
+	  
+		$return .= '</div>';
+		$return .= '</div>';
+		$return .= '<div id="mzModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mzSmallModalLabel" aria-hidden="true">
+					 <div class="modal-content">
+
+					</div>
+			</div>';
 	  return $return;
 	}
 

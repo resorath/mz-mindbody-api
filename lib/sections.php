@@ -202,13 +202,19 @@ add_action ('admin_menu', 'mz_mindbody_settings_menu');
 		<?php _e('Add to page or post with shortcode:', 'mz-mindbody-api'); 
 		echo '&nbsp;';
 		printf('[%1$s], [%2$s], [%3$s], [%4$s %5$s=%6$s %7$s="1, 2" %8$s=-99 %9$s="Meditation, Hot Yoga"]',
-		'mz_mindbody_show_schedule', 'mz_mindbody_show_events', 'mz_mindbody_staff_list',
-		'mz_mindbody_show_schedule', 'type', 'day', 'locations', 'account', 'class_types'); 
+		'mz-mindbody-show-schedule', 'mz-mindbody-show-events', 'mz-mindbody-staff-list',
+		'mz-mindbody-show-schedule', 'type', 'day', 'locations', 'account', 'class_types'); 
 		echo '<br/>('.__('-99 is the MBO sandbox/testing account', 'mz-mindbody-api').')</font></p>';
 		echo '<p>';
 		echo __('Grid and Filter can be added like this:', 'mz-mindbody-api').'<br/>';
 		printf('[%1$s %2$s=1 %3$s=1]<br/>',
 		'mz-mindbody-show-schedule', 'grid', 'filter');
+		
+		echo '</p>';
+		echo '<p>';
+		
+		echo __('To display staff page as a responsive gallery of images with pop-up biographies, use ', 'mz-mindbody-api');
+		printf('[%1$s %2$s]<br/>', 'mz-mindbody-staff-list', 'gallery=1');
 		
 		echo '</p>';
 		echo '<p>' . __('To remove hide any of the following elements from grid calendar:', 'mz-mindbody-api') . 
@@ -220,8 +226,8 @@ add_action ('admin_menu', 'mz_mindbody_settings_menu');
 		echo '&nbsp;[mz-mindbody-signup], [mz-mindbody-login], [mz-mindbody-logout]';
 		?></p>
 
-		<p><?php _e('In order for these to work correctly, the permalinks for those pages need to be:', 'mz-mindbody-api');
-		echo '&nbsp;<em>create-account</em>, <em>login</em> and <em>logout</em>.'; ?>
+		<p><?php _e('!!! In order for these to work correctly, the permalinks for those pages need to be:', 'mz-mindbody-api');
+		echo '&nbsp;<em>create-account</em>, <em>login</em> and <em>logout</em>!!!'; ?>
 
 		</div>
 	<?php

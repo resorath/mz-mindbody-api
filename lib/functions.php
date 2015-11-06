@@ -1,11 +1,5 @@
 <?php
 
-if (phpversion() >= 5.3) {
-		add_action('wp_enqueue_scripts', __NAMESPACE__ . '\\assets', 100);
-	}else{
-		add_action('wp_enqueue_scripts', 'assets', 100);
-	}
-	
 function mz_getDateRange($date, $duration=7) {
     /*Gets a YYYY-mm-dd date and returns an array of four dates:
         start of requested week
@@ -107,10 +101,34 @@ function mz_validate_date( $string ) {
 	
 //For Testing
 function mZ_write_to_file($message){
-        $handle = fopen("/Applications/MAMP/logs/mZ_mbo_reader.php", "a+");
-        fwrite($handle, "\nMessage:\t " . $message);
-        fclose($handle);
+		$handle = fopen("/Applications/MAMP/logs/mZ_mbo_reader.php", "a+");
+		if (is_array($message)):
+			fwrite($handle, "\nMessage is array.\t ");
+			fclose($handle);
+			file_put_contents('/Applications/MAMP/logs/mZ_mbo_reader.php', print_r($message, true),
+												FILE_APPEND | LOCK_EX);
+		else:
+			fwrite($handle, "\nMessage:\t " . $message);
+			fclose($handle);
+		endif;
+		}
+
+//TODO - implement this better method
+function mZ_new_write_to_file($message)
+{
+    $header = "\nMessage:\t ";
+
+    if (is_array($message)) {
+        $header = "\nMessage is array.\n";
+        $message = print_r($message, true);
     }
+
+    file_put_contents(
+        '/path/to/logs/a_log_file.php', 
+        $header . $message, 
+        FILE_APPEND | LOCK_EX
+    );
+}
 
 //Format arrays for display in development
 function mz_pr($data)

@@ -11,7 +11,7 @@
  * @wordpress-plugin
  * Plugin Name: 	mZoo Mindbody Interface - Schedule, Events, Staff Display
  * Description: 	Interface Wordpress with MindbodyOnline data with Bootstrap Responsive Layout.
- * Version: 		2.1.0
+ * Version: 		2.2.4
  * Author: 			mZoo.org
  * Author URI: 		http://www.mZoo.org/
  * Plugin URI: 		http://www.mzoo.org/mz-mindbody-wp
@@ -149,7 +149,7 @@ class MZ_Mindbody_API_Loader {
      * Calls the add methods for above referenced filters and actions and registers them with WordPress.
      */
     public function run() {
- 
+ 		
         foreach ( $this->filters as $hook ) {
             add_filter( $hook['hook'], array( $hook['component'], $hook['callback'] ) );
         }
@@ -213,8 +213,7 @@ class MZ_Mindbody_API {
     private function load_dependencies() {
     
  		//Advanced Includes
-		foreach ( glob( plugin_dir_path( __FILE__ )."advanced/*.php" ) as $file )
-        	include_once $file;
+        include_once(dirname( __FILE__ ) . '/advanced/ajax.php');
         	
         include_once(dirname( __FILE__ ) . '/mindbody-php-api/MB_API.php');
 
@@ -274,6 +273,7 @@ class MZ_Mindbody_API {
         add_shortcode('mz-mindbody-show-schedule', array($schedule_display, 'mZ_mindbody_show_schedule'));
         add_shortcode('mz-mindbody-staff-list', array($mz_staff, 'mZ_mindbody_staff_listing'));
         add_shortcode('mz-mindbody-show-events', array($mz_events, 'mZ_mindbody_show_events'));
+        add_shortcode('mz-mindbody-show-registrants', array($mz_clients, 'mZ_mindbody_show_registrants'));
         add_shortcode('mz-mindbody-login', array($mz_clients, 'mZ_mindbody_login'));
         add_shortcode('mz-mindbody-signup', array($mz_clients, 'mZ_mindbody_signup'));
         add_shortcode('mz-mindbody-logout', array($mz_clients, 'mZ_mindbody_logout'));
@@ -348,7 +348,7 @@ class mZ_Mindbody_day_schedule extends WP_Widget {
             'classname' => 'mZ_Mindbody_day_schedule_class',
             'description' => __('Display class schedule for current day.', 'mz-mindbody-api')
             );
-        $this->WP_Widget('mZ_Mindbody_day_schedule', __('Today\'s MindBody Schedule', 'mz-mindbody-api'),
+        parent::__construct('mZ_Mindbody_day_schedule', __('Today\'s MindBody Schedule', 'mz-mindbody-api'),
                             $widget_ops );
     } 
     
@@ -386,6 +386,128 @@ class mZ_Mindbody_day_schedule extends WP_Widget {
 if ( is_admin() )
 {     
 	$admin_backend = new MZ_Mindbody_API_Admin('2.1.0');
+	//Start Ajax Signup
+	 //(Ajax Handler has to be within admin section)
+ add_action('wp_ajax_nopriv_mz_mbo_add_client', 'mz_mbo_add_client_callback');
+ add_action('wp_ajax_mz_mbo_add_client', 'mz_mbo_add_client_callback');	
+
+ function mz_mbo_add_client_callback() {
+
+  check_ajax_referer( $_REQUEST['nonce'], "mz_MBO_add_to_class_nonce", false);
+  	
+ 	require_once(MZ_MINDBODY_SCHEDULE_DIR .'mindbody-php-api/MB_API.php');
+	require_once(MZ_MINDBODY_SCHEDULE_DIR .'inc/mz_mbo_init.inc');
+	$mb = MZ_Mindbody_Init::instantiate_mbo_API();
+ 
+ 	$additions['ClassIDs'] = array($_REQUEST['classID']);
+ 	$additions['ClientIDs'] = array($_REQUEST['clientID']);
+ 	//$additions['Test'] = true;
+ 	$additions['SendEmail'] = true;
+ 	$signupData = $mb->AddClientsToClasses($additions);
+ 	//$mb->debug();
+     //$rand_number = rand(1, 10); # for testing
+ 
+ 	if ( $signupData['AddClientsToClassesResult']['ErrorCode'] != 200 ) {
+ 			$result['type'] = "error";
+ 			$result['message'] = '';
+ 			
+ 		if (!isset($signupData['AddClientsToClassesResult']['Classes']['Class']['Clients']['Client'])) :
+ 		
+ 			mZ_write_to_file($signupData['AddClientsToClassesResult']['ErrorCode']);
+ 			$result['type'] = "error";
+ 			$result['message'] = __('Cannot add to class.', 'mz-mindbody-api');
+ 			
+ 		else:
+ 			
+			foreach ($signupData['AddClientsToClassesResult']['Classes']['Class']['Clients']['Client']['Messages'] as $message){
+					if (strpos($message, 'already booked') != false){
+						$result['message'] .= __('Already registered.', 'mz-mindbody-api');
+						}else{
+						$result['message'] .= $message;
+						}
+				}
+				
+		endif;
+			
+ 		}else{
+ 			//$classDetails = $signupData['AddClientsToClassesResult']['Classes']['Class'];
+ 			
+ 			$result['type'] = "success";
+ 			$result['message'] = __('Registered via MindBody', 'mz-mindbody-api');
+ 			/*$classDetails['ClassDescription']['Name']
+ 			$classDetails['Staff']['Name'];
+ 			$classDetails['Location']['Name'];
+ 			$classDetails['Location']['Address'];*/
+ 		}
+ 		
+ 	if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+       $result = json_encode($result);
+       echo $result;
+    }
+    else {
+       header("Location: ".$_SERVER["HTTP_REFERER"]);
+    }
+ 
+    die();
+ }
+ //End Ajax Signup
+
+ require_once('lib/functions.php'); // for testing functions
+ //Start Ajax Get Registrants
+ add_action('wp_ajax_nopriv_mz_mbo_get_registrants', 'mz_mbo_get_registrants_callback');
+ add_action('wp_ajax_mz_mbo_get_registrants', 'mz_mbo_get_registrants_callback');	
+
+ function mz_mbo_get_registrants_callback() {
+
+  check_ajax_referer( $_REQUEST['nonce'], "mz_MBO_get_registrants_nonce", false);
+  	
+ 	require_once(MZ_MINDBODY_SCHEDULE_DIR .'mindbody-php-api/MB_API.php');
+	require_once(MZ_MINDBODY_SCHEDULE_DIR .'inc/mz_mbo_init.inc');
+	
+	$mb = MZ_Mindbody_Init::instantiate_mbo_API();
+ 
+ 	$classid = $_REQUEST['classID'];
+ 	$result['type'] = "success";
+ 	$result['message'] = $classid;
+ 	$class_visits = $mb->GetClassVisits(array('ClassID'=> $classid));
+		if ($class_visits['GetClassVisitsResult']['Status'] != 'Success'):
+				$result['type'] = "error";
+ 				$result['message'] = __("Unable to retrieve registrants.", 'mz-mindbody-api');
+ 		else:
+				if (empty($class_visits['GetClassVisitsResult']['Class']['Visits'])) :
+					$result['type'] = "success";
+ 					$result['message'] = __("No registrants yet.", 'mz-mindbody-api');
+ 					//mZ_write_to_file($class_visits['GetClassVisitsResult']['Class']['Visits']);
+				else:
+					$result['message'] = array();
+					$result['type'] = "success";
+					foreach($class_visits['GetClassVisitsResult']['Class']['Visits'] as $registrants) {
+						if (!isset($registrants['Client']['FirstName'])):
+							foreach ($registrants as $key => $registrant) {
+									if (isset($registrant['Client'])): 
+									$result['message'][] = $registrant['Client']['FirstName'] . '_' 
+																					. substr($registrant['Client']['LastName'], 0, 1);
+									endif;
+								}
+						else: 
+								$result['message'][] = $registrants['Client']['FirstName'] . '_' 
+																					. substr($registrants['Client']['LastName'], 0, 1);
+						endif;
+					}
+				endif;
+		endif;		
+ 		
+ 	if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+       $result = json_encode($result);
+       echo $result;
+    }
+    else {
+       header("Location: ".$_SERVER["HTTP_REFERER"]);
+    }
+ 
+    die();
+ }
+ //End Ajax Get Registrants
 }
 else
 {// non-admin enqueues, actions, and filters
