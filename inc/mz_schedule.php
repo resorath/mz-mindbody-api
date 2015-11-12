@@ -142,6 +142,7 @@ class MZ_Mindbody_Schedule_Display {
 		if ($grid == 0) {
 			foreach($mz_days as $classDate => $mz_classes)
 			{   
+			
 				$tbl->addRow('header');
 				// arguments: cell content, class, type (default is 'data' for td, pass 'header' for th)
 				// can include associative array of optional additional attributes
@@ -161,6 +162,7 @@ class MZ_Mindbody_Schedule_Display {
 								continue;
 								}
 							}
+						//mz_pr($class );
 						$sDate = date_i18n('m/d/Y', strtotime($class['StartDateTime']));
 						$sLoc = $class['Location']['ID'];
 						$sTG = $class['ClassDescription']['Program']['ID'];
@@ -169,6 +171,18 @@ class MZ_Mindbody_Schedule_Display {
 						$sclassidID = $class['ID'];
 						//mz_pr($sclassidID);
 						$classDescription = $class['ClassDescription']['Description'];
+						
+						//Let's find an image if there is one and assign it to $classImage
+						
+						if (!isset($class['ClassDescription']['ImageURL'])) {
+							$classImage = '';
+							if (isset($class['ClassDescription']['AdditionalImageURLs']) && !empty($classImageArray)) {
+								$classImage = pop($classImageArray);
+								}
+						} else {
+							$classImage = $class['ClassDescription']['ImageURL'];
+						}
+
 						$sType = -7;
 						$showCancelled = ($class['IsCanceled'] == 1) ? '<div class="mz_cancelled_class">' .
 										__('Cancelled', 'mz-mindbody-api') . '</div>' : '';
@@ -258,7 +272,6 @@ class MZ_Mindbody_Schedule_Display {
 						// populate dictionary of locations with names 
 						if (!array_key_exists($sLoc, $this->locations_dictionary))
 							$this->locations_dictionary[$sLoc] = $locationName;
-				
 				}// EOF foreach class
 			}// EOF foreach day
 
@@ -373,7 +386,6 @@ class MZ_Mindbody_Schedule_Display {
 									$class_separator = ($key == $num_classes_min_one) ? '' : '<hr/>';
 									$linkURL = "https://clients.mindbodyonline.com/ws.asp?sDate={$sDate}&amp;sLoc={$sLoc}&amp;sTG={$sTG}&amp;sType={$sType}&amp;sclassid={$sclassid}&amp;studioid={$studioid}";
 									if(!in_array('signup', $hide)){
-									//TODO Are advanced and show_registrants compatible?
 										if ($advanced == 1){
 											if (isset($isAvailable) && ($isAvailable != 0)) {
 												$add_to_class_nonce = wp_create_nonce( 'mz_MBO_add_to_class_nonce');
@@ -412,10 +424,9 @@ class MZ_Mindbody_Schedule_Display {
 											. '" data-className="' . $className 
 											. '" data-classID="' . $sclassidID  . '" href="#">' . $className . '</a>'
 											. ' ' . $teacher
-											. '<br/>' .	 
-									$teacher . $signupButton .
-									$classLength . $showCancelled . $locationNameDisplay . '</div>' .
-									$class_separator;
+											. '<br/><div id="visitMBO" class="btn visitMBO" style="display:none">' .
+							$manage_text . '</a></div>' .
+							$showCancelled ;
 						} else {
 
 									$class_details .= '<div class="mz_schedule_table mz_description_holder mz_location_'.$sLoc.' '.'mz_' . 
