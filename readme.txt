@@ -3,8 +3,8 @@ Contributors: mikeill, rtzee
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A95ZEELLHGECE
 Tags: mindbody, schedule, calendar, yoga, MBO, mindbodyonline, gym
 Requires at least: 3.0.1
-Tested up to: 4.3.1
-Stable tag: 2.2.5
+Tested up to: 4.6.1
+Stable tag: 2.4.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,7 +20,7 @@ Two important requirements are:
     1. PEAR and SOAP must be installed/enabled on the web server
     2. MindBodyOnline API Developer Account
 
-(PHP 5.2 compliant.)
+(NO LONGER PHP 5.2 compliant!)
 
 == Installation ==
 
@@ -53,6 +53,69 @@ You need to register a developer account with MindBody, which costs $5+ per webs
 4. Admin Page
 
 == Changelog ==
+
+= 2.4.3 =
+Disable signup button on class schedule when after start time.
+
+= 2.4.2 =
+Fix break with events listing that occurred in last release.
+Fix break in signup links also from recent updates.
+
+= 2.4.1 =
+Show full seven days in horizontal mode starting current day.
+Remove date filter from javascript to php.
+
+= 2.4.0 =
+Remove Modernizr.
+Add shortcode to display limited number of events.
+
+= 2.3.9 =
+Fix typo and add class.
+
+= 2.3.8 =
+Fix issue with events duration length display and enable modal window on events list.
+
+= 2.3.7 =
+* New parameter for Events - "list=1" to display short list of events
+
+= 2.3.6 =
+* Fix error with show_registrants which got broken in development
+
+= 2.3.5 =
+* Fix bug with multiple locations requiring space between them in shortcode.
+* Use Object for Class Event to reduce code redundancy. (Dry it up)
+* Fix errors with transients
+
+= 2.3.4 =
+* Fix error date_display not displaying with add to class.
+
+= 2.3.3 =
+* Wrap $ calls in (`function($) { //$ here })( jQuery );`
+
+= 2.3.2 =
+* Display schedule navigation even if there are no classes in current week.
+* Allow shortcode argument to hide cancelled classes from calendar: show_cancelled=1
+* Replace `$(document).ready(function($)` with `jQuery(document).ready(function($)` 
+
+= 2.3.1 =
+* Use OOP to create link for schedule pop-up.
+
+= 2.3.0 =
+* Repair cache reset.
+
+= 2.2.9 =
+* Build transient name dynamically based on shortcode atts and $_GET variable.
+
+= 2.2.8 =
+* Fix error with timestamp in schedule.
+
+= 2.2.7 =
+* Refactor to make Schedule script more DRY.
+* Replace Bootstrap Modal with colorbox which seems to be less likely to cause theme conflicts.
+* Fix broken caching.
+
+= 2.2.6 =
+* Not much of note
 
 = 2.2.5 =
 * Clean up and add a little output on SOAP ERROR.
@@ -105,6 +168,33 @@ Fix navigation on Schedule page when Force Cache not selected.
 Initial release.
 
 == Upgrade Notice ==
+
+= 2.4.3 =
+Signup button disabled on class schedule when after start time.
+
+= 2.4 =
+New shortcode, event_limit to display limited number of events.
+
+= 2.4.1 =
+Horizontal schedule shows next seven days from current day.
+Also ability (beta) to show details about "class owner" for subbed classes.
+
+= 2.3.8 =
+Now you can display Events (Enrollments) as a list with Modal Popup showing details.
+
+= 2.3.7 =
+* New parameter for Events - "list=1" to display short list of events
+
+= 2.3.6 =
+
+= 2.3.5 =
+Allow special Characters in Event/Class Titles
+Add multiple account support in events
+Enable toggle between horizontal and grid calendar display
+
+= 2.2.7 =
+Wider Theme compatibility for Modal Pop-ups.
+Can display registrants on class pop-ups.
 
 = 2.2.2 =
 Add gallery mode option for Staff page.

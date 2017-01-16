@@ -2,11 +2,11 @@
 
 class MZ_MBO_Staff {
 
-	private $mz_mbo_globals;
+	private $mz_mbo_object;
 	
 	public function __construct(){
 		require_once(MZ_MINDBODY_SCHEDULE_DIR .'inc/mz_mbo_init.inc');
-		$this->mz_mbo_globals = new MZ_Mindbody_Init();
+		$this->mz_mbo_object = new MZ_Mindbody_Init();
 	}
 
 	
@@ -25,7 +25,6 @@ class MZ_MBO_Staff {
 		$gallery = $atts['gallery'];
 		
 		wp_enqueue_style('mZ_mindbody_schedule_bs', asset_path('styles/main.css'), false, null);
-		wp_enqueue_script('modernizr', asset_path('scripts/modernizr.js'), array(), null, true);
 		
 		if ($gallery == 1)
 			wp_enqueue_script('mz_mbo_bootstrap_script', asset_path('scripts/main.js'), array('jquery'), null, true);
@@ -80,6 +79,7 @@ EFD;
 	  {
 		if (!empty($staff_member['Bio']) && !empty($staff_member['ImageURL']))
 		{
+		
 			$mz_staff_name = $staff_member['Name'];
 			$mz_staff_bio = $staff_member['Bio'];
 			$mz_staff_bio = str_replace($mz_empty_tags_pattern, '', $mz_staff_bio);
@@ -114,12 +114,14 @@ EFD;
 				$return .= '<hr style="clear:both"/>';
 		  } else {
 				$return .=     '<div class="col-lg-3 col-md-4 col-xs-6 mz-staff-thumb">';
-				$return .=     '<a class="thumbnail" data-toggle="modal" data-target="#mzModal" data-maincontent="'. rawUrlEncode($mz_staff_bio) .'" href="' . MZ_MINDBODY_SCHEDULE_URL . 
-							'inc/modal_biographies.php?staffName='. urlencode(substr($mz_staff_name, 0, 1000)) .
-							'&amp;staffID='. urlencode(substr($mz_staff_id, 0, 1000)) .
-							'&amp;siteID='. urlencode(substr($mz_site_id, 0, 1000)) .
-							'&amp;domStart='. $mz_replace_dom_start .
-							'&amp;staffImage='. urlencode(substr($mz_staff_image, 0, 1000)) .'">';
+				$return .=     '<a class="thumbnail" data-target="#mzStaffModal" '
+								. 'data-staffImage="' . rawUrlEncode($mz_staff_image) . '" ' 
+								. 'data-staffName="' . $mz_staff_name . '" '
+								. 'data-domStart="' . $mz_replace_dom_start . '" '
+								. 'data-siteID="' . $mz_site_id . '" '
+								. 'data-staffID="' . $mz_staff_id . '" '
+								. 'data-staffBio="' . rawUrlEncode($mz_staff_bio) .'" href="' . MZ_MINDBODY_SCHEDULE_URL . 
+							'inc/modal_descriptions.php">';
 				$return .=             sprintf('<img class="img-responsive mz-staff-image" src="%s" alt="">', $mz_staff_image);
 				$return .= 						sprintf('<div class="mz-staff-name">%s</div>',$mz_staff_name);
 				$return .=        ' </a>';
@@ -130,10 +132,8 @@ EFD;
 	  
 		$return .= '</div>';
 		$return .= '</div>';
-		$return .= '<div id="mzModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mzSmallModalLabel" aria-hidden="true">
-					 <div class="modal-content">
+		$return .= '<div id="mzStaffModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mzSmallModalLabel" aria-hidden="true">
 
-					</div>
 			</div>';
 	  return $return;
 	}
